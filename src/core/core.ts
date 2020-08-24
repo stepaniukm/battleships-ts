@@ -144,7 +144,6 @@ export class Battleships {
   }
 
   shoot(shooter: Players, position: string = this.getAIShoot()) {
-    console.log(position)
     if (this.turn !== shooter) return
 
     const [r, c] = position
@@ -157,8 +156,6 @@ export class Battleships {
 
     const field = battlefield[row][column]
 
-    console.log(field)
-
     if (isShip(field)) {
       shooterView[row][column] = Field.HIT
       battlefield[row][column] = Field.HIT
@@ -170,6 +167,14 @@ export class Battleships {
   }
 
   reset() {
-    this[Players.HUMAN]
+    this[Players.HUMAN] = {
+      board: emptyBoard(this.size),
+      view: emptyBoard(this.size)
+    }
+
+    this[Players.AI] = {
+      board: emptyBoard(this.size),
+      view: emptyBoard(this.size)
+    }
   }
 }
