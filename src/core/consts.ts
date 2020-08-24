@@ -11,14 +11,17 @@ export enum Field {
   Destroyer = "D"
 }
 
-export const isShip = (f: Field) => [Field.Carrier, Field.Battleship, Field.Cruiser, Field.Submarine, Field.Destroyer].includes(f)
+export type ShipsFields = Field.Battleship | Field.Carrier | Field.Cruiser | Field.Destroyer | Field.Submarine
+
+export const shipShortToName: Record<ShipsFields, ShipName> = {
+   "C": "Carrier",
+   "B": "Battleship",
+   "R": "Cruiser",
+   "S": "Submarine",
+   "D": "Destroyer"
+}
 
 export type Board = Field[][]
-
-export enum Players {
-  HUMAN = "HUMAN",
-  AI = "AI",
-}
 
 export const emptyBoard = (size: number) =>
   Array.from({ length: size }, () => Array.from({ length: size }, () => Field.EMPTY))
@@ -66,14 +69,5 @@ export const Ships: Record<ShipName, Ship> = {
 }
 
 export const fleet = Object.keys(Ships) as ShipName[]
-
-export const createShip = (type: ShipName, { topLeftCorner, orientation }: Omit<Required<Ship>, "length" | "type">): Required<Ship> => {
-  return {
-    ...Ships[type],
-    type,
-    topLeftCorner,
-    orientation,
-  }
-}
 
 export const FULL_FLEET = 5 + 4 + 3 + 3 + 2

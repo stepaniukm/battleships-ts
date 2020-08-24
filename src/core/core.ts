@@ -1,17 +1,5 @@
-import {
-  emptyBoard,
-  Board,
-  Players,
-  Ship,
-  Orientation,
-  Field,
-  FULL_FLEET,
-  createShip,
-  fleet,
-  isShip,
-  Coord,
-} from "./consts"
-import { charToCode, getRandomCoordGenerator, codeToChar } from "./utils"
+import { emptyBoard, Board, Ship, Orientation, Field, FULL_FLEET, fleet, Coord } from "./consts"
+import { charToCode, getRandomCoordGenerator, createShip, isShip } from "./utils"
 
 type PlayerInfo = {
   board: Board
@@ -19,30 +7,22 @@ type PlayerInfo = {
 }
 
 export class Battleships {
-  public [Players.HUMAN]: PlayerInfo
-  public [Players.AI]: PlayerInfo
-  public turn: Players = Players.HUMAN
+  public view: Board
+  private board: Board
   public size: number
-  public inProgress = false
   public randomCoord: () => Coord
 
   constructor(size: number) {
     this.size = size
-    this.turn = Players.HUMAN
-    this[Players.HUMAN] = {
-      board: emptyBoard(size),
-      view: emptyBoard(size),
-    }
-    this[Players.AI] = {
-      board: emptyBoard(size),
-      view: emptyBoard(size),
-    }
+    this.board = emptyBoard(size)
+    this.view = emptyBoard(size)
     this.randomCoord = getRandomCoordGenerator(size)
   }
-  canPlace(player: Players, { topLeftCorner, orientation, length }: Required<Ship>) {
+
+  canPlace({ topLeftCorner, orientation, length }: Required<Ship>) {
     const { x, y } = topLeftCorner
 
-    const squares = this[player].board
+    const squares = this.board
       .map((row, i) =>
         row.filter((_, j) => {
           if (orientation === Orientation.HORIZONTAL) {
@@ -58,12 +38,12 @@ export class Battleships {
     return squares.every((el) => el === Field.EMPTY) && squares.length === length
   }
 
-  placeShip(player: Players, ship: Required<Ship>) {
-    if (this.canPlace(player, ship)) {
+  placeShip(ship: Required<Ship>) {
+    if (this.canPlace(ship)) {
       const { topLeftCorner, orientation, length, type } = ship
       const { x, y } = topLeftCorner
 
-      this[player].board = this[player].board.map((row, i) =>
+      this.board = this.board.map((row, i) =>
         row.map((field, j) => {
           if (orientation === Orientation.HORIZONTAL) {
             if (i === y && j - x < length && j - x >= 0) {
@@ -84,29 +64,24 @@ export class Battleships {
     }
   }
 
-  isBoardReady(player: Players) {
+  isBoardReady() {
     return (
-      this[player].board.flat().reduce((counter, field) => {
+      this.board.flat().reduce((counter, field) => {
         return isShip(field) ? counter + 1 : counter
       }, 0) === FULL_FLEET
     )
   }
 
   isGameOver() {
-    const countHUMAN = this[Players.HUMAN].board.flat().reduce((counter, field) => {
+    const count = this.board.flat().reduce((counter, field) => {
       return isShip(field) ? counter + 1 : counter
     }, 0)
 
-    const countAI = this[Players.AI].board.flat().reduce((counter, field) => {
-      return isShip(field) ? counter + 1 : counter
-    }, 0)
-
-    if (countHUMAN === 0) return { isOver: true, winner: Players.AI }
-    if (countAI === 0) return { isOver: true, winner: Players.HUMAN }
-    else return { isOver: false }
+    if (count === 0) return true
+    else return false
   }
 
-  randomFullBoard(player: Players) {
+  randomFullBoard() {
     for (const shipType of fleet) {
       let ship
       do {
@@ -119,62 +94,33 @@ export class Battleships {
             y,
           },
         })
-      } while (!this.placeShip(player, ship))
+      } while (!this.placeShip(ship))
     }
   }
 
-  oppositePlayer(p: Players) {
-    if (p === Players.AI) return Players.HUMAN
-    else return Players.AI
-  }
-
-  getAIShoot(): string {
-    const fieldsToUse = this[Players.HUMAN].board.flatMap((row, i) =>
-      row
-        .map((field, j) => ({ x: j, y: i, field }))
-        .filter((withCoord) => {
-          return isShip(withCoord.field) || withCoord.field === Field.EMPTY
-        }),
-    )
-
-    const l = fieldsToUse.length
-    const { x, y } = fieldsToUse[Math.floor(Math.random() * l)]
-
-    return `${codeToChar(y)}${x + 1}`
-  }
-
-  shoot(shooter: Players, position: string = this.getAIShoot()) {
-    if (this.turn !== shooter) return
-
-    const [r, c] = position
+  shoot(position: string) {
+    const [r, ...c] = position
 
     const row = charToCode(r)
-    const column = Number(c) - 1
+    const column = Number(c.join("")) - 1
 
-    const shooterView = this[shooter].view
-    const battlefield = this[this.oppositePlayer(shooter)].board
+    if (row < 0 || column < 0 || row > this.size || column > this.size) {
+      return "Bad coordinates, please try again"
+    }
 
-    const field = battlefield[row][column]
+    const field = this.board[row][column]
 
     if (isShip(field)) {
-      shooterView[row][column] = Field.HIT
-      battlefield[row][column] = Field.HIT
+      this.view[row][column] = Field.HIT
+      this.board[row][column] = Field.HIT
     } else {
-      shooterView[row][column] = Field.MISSED
-      battlefield[row][column] = Field.MISSED
-      this.turn = this.oppositePlayer(this.turn)
+      this.view[row][column] = Field.MISSED
+      this.board[row][column] = Field.MISSED
     }
   }
 
   reset() {
-    this[Players.HUMAN] = {
-      board: emptyBoard(this.size),
-      view: emptyBoard(this.size)
-    }
-
-    this[Players.AI] = {
-      board: emptyBoard(this.size),
-      view: emptyBoard(this.size)
-    }
+    this.board = emptyBoard(this.size)
+    this.view = emptyBoard(this.size)
   }
 }
