@@ -2,11 +2,6 @@
   "name": "battleships-ts",
   "version": "1.0.0",
   "description": "Simple recruitment task",
-  "main": "src/index.js",
-  "scripts": {
-    "start": "parcel src/index.html",
-    "test": "jest"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/stepaniukm/battleships-ts.git"
